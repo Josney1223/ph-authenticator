@@ -8,13 +8,19 @@ from flask_session import Session
 from src.validation import validate_json
 from src.lib import auth
 
+UPLOAD_FOLDER = os.getcwd()
+
 app = Flask(__name__)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.secret_key = b'CDgWUjqcCaNURJD9AkcRgKaTucApXBGH'
 app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = 'filesystem'
+
 api = Api(app)
 Session(app)
 #CORS(api)
 
-UPLOAD_FOLDER = os.getcwd()
 
 BD_PASSWORD: str = "B@tat@123"
 BD_HOST: str = "10.147.17.25"    
@@ -28,7 +34,7 @@ API_ENDPOINT_EXCEL: str = "http://"+SERVER+":2001/api/v1/GerarExcel/ExcelEmpresa
 API_ENDPOINT_EMAIL: str = "http://"+SERVER+":2002/api/v1/GerarEmail/EmailBasico"
 API_ENDPOINT_PDF: str = "http://"+SERVER+":2003/api/v1/GerarPDF/FromJson"
 API_ENDPOINT_ZIP: str = "http://"+SERVER+":2000/api/v1/GerarZip/AES"
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 
 
 class GerarFDP(Resource):
@@ -49,7 +55,7 @@ class GerarFDP(Resource):
                
         session[token] = data
 
-        return Response("Autenticado", status=200)
+        return Response("Autenticado", status=200, headers={"token": token})
 
     @app.route("/api/v1/Auth/UserSignin", methods=["POST"])       
     def UserSignin(*self):
@@ -77,11 +83,11 @@ class GerarFDP(Resource):
         if not worker.reset_password(request_json["cpf"], request_json["email"]):
             return Response("Server Error", status=500)
 
-        return Response("Email Reenviado", status=200)
+        return Response("Email Enviado", status=200)
 
     @app.route("/api/v1/Auth/ValidateToken", methods=["GET"])       
     def ValidateToken(*self):
-        args = request.args
+        args = request.headers
 
         if not args["Authorization"]:
             return Response("token não enviado", status=400)

@@ -7,8 +7,6 @@ from src.lib.email_connection import create_email, send_email
 from src.lib.db_acess import DatabaseAccess
 from datetime import datetime
 
-PUBLIC_KEY = b'PRk2bsnp48XgWk7V4V35Qsd70jufgntZFt6P9R20sEo='
-
 class Authenticator:
     def __init__(self, db_data) -> None:
 
@@ -71,9 +69,9 @@ class Authenticator:
         return True
 
     def generate_token(self) -> Union[str, dict]:
-        bearer: str = 'Bearer '.join(random.choice(self.characters) for i in range(128))
+        bearer: str = 'Bearer ' + ''.join(random.choice(self.characters) for i in range(1024))
         data = {
-            "login_time": datetime.strptime(datetime.now(),""),
+            "login_time": datetime.strftime(datetime.now(), "%d/%m/%Y %H:%M:%S"),
             "access_level": self.access_level
         }
         return bearer, data
