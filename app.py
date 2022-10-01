@@ -1,5 +1,7 @@
 import os
 
+from json import dumps
+
 from flask import Flask, request, Response, session
 from flask_cors import cross_origin, CORS
 from flask_restful import Resource, Api
@@ -44,7 +46,7 @@ class GerarFDP(Resource):
         request_json = request.get_json()
 
         if not validate_json.validator(request_json, "login"):
-            return Response("Json invalido", status=400)
+            return Response(dumps(validate_json.get_json_schema("login")), status=400)
 
         worker: auth.Authenticator = auth.Authenticator(BD_DATA)
 
@@ -62,7 +64,7 @@ class GerarFDP(Resource):
         request_json = request.get_json()
 
         if not validate_json.validator(request_json, "signin"):
-            return Response("json invalido", status=400)
+            return Response(dumps(validate_json.get_json_schema("signin")), status=400)
 
         worker: auth.Authenticator = auth.Authenticator(BD_DATA)
 
@@ -76,7 +78,7 @@ class GerarFDP(Resource):
         request_json = request.get_json()
 
         if not validate_json.validator(request_json, "reset_pwd"):
-            return Response("json invalido", status=400)
+            return Response(dumps(validate_json.get_json_schema("reset_pwd")), status=400)
 
         worker: auth.Authenticator = auth.Authenticator(BD_DATA)
 

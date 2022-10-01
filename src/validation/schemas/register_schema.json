@@ -1,0 +1,9 @@
+{
+    "type" : "object",
+    "required": [ "cpf", "email", "password" ],
+    "properties" : {
+        "cpf" : {"type" : "string"},
+        "email" : {"type" : "string"},
+        "password" : {"type" : "string"}
+    }
+}
