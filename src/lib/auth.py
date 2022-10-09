@@ -1,14 +1,19 @@
 import random
 import string
+import pandas as pd
+import mysql.connector
 
+from flask import Response
+from mysql.connector.errors import IntegrityError
+from sqlalchemy import create_engine, engine
 from typing import Union
 from rsa import encrypt, decrypt, PrivateKey, PublicKey
 from src.lib.email_connection import create_email, send_email
-from src.lib.db_acess import DatabaseAccess
 from datetime import datetime
 
+
 class Authenticator:
-    def __init__(self, db_data) -> None:
+    def __init__(self) -> None:
 
         with open("./src/keys/privateKey.pem", "rb") as p:
             self.private_key = PrivateKey.load_pkcs1(p.read())
@@ -16,10 +21,28 @@ class Authenticator:
         with open("./src/keys/publicKey.pem", "rb") as p:
             self.public_key = PublicKey.load_pkcs1(p.read())
 
+        self.db_access: tuple[str] = ("10.147.17.25", "admin_projeto_horizonte", "PROJETO TI@TCC2022") 
+        self.db_engine: engine.Engine = create_engine('mysql+pymysql://admin_projeto_horizonte:PROJETO%20TI%40TCC2022@10.147.17.25:3306/ProjetoHorizonte')
         self.all_characters: str = string.ascii_letters + string.digits + string.punctuation
-        self.characters: str = string.ascii_letters + string.digits 
-        self.db_acess: DatabaseAccess = DatabaseAccess(db_data)
+        self.characters: str = string.ascii_letters + string.digits         
         self.access_level: int = 0
+
+    def __run_query(self, query: str, params: tuple = (), has_return: bool = True) -> Union[pd.DataFrame, None]:
+        
+        if has_return:
+            try:            
+                return pd.read_sql(query, con=self.db_engine)
+            except Exception as e:
+                raise Exception("Falha ao se conectar com o banco de dados." + str(e.args))        
+        else:
+            with mysql.connector.connect(host = self.db_access[0],                                                
+                                        user = self.db_access[1],
+                                        password = self.db_access[2]) as con:
+                cursor = con.cursor()
+                cursor.execute(query, params)
+                con.commit()
+
+        return None
 
     def __encrypt(self, message: str) -> bytes:
         return encrypt(message.encode(), self.public_key)
@@ -31,41 +54,50 @@ class Authenticator:
             return ""
 
     def validate_login(self, login: str, pwd: str) -> bool:
-        #search: list = self.db_acess.search_login(login)
-        #search_login: str = search[0]
-        #search_pwd: bytes = search[1]
-        #self.access_level: int = search[2]
+        query: str = "CALL ProjetoHorizonte.BuscaSenha('{}');".format(login)                        
+        search_pwd = self.__run_query(query).values.tolist()[0][0]
 
-        self.access_level = 0
-        search_login = "123456789"
-        search_pwd = b'\x8f\x9cY\xce\x85\x0f9\xdc\xdd@V\x88\x7f(>h\x17\xc5\xd6\xae\xd6\x0e"\x8az\x15\xfb\x93\xf31\x94\xaa\x80\xe1\x87d+\x16A\xc5\x9b\xd0F\x97~\xe7\x1b\xff\xf3\x19\xe4U\xa1G\xae\x898\x83\x94\xd8\x81\xcc^\xef>b\xbaY\xfb\x8dO\xc06\xc2O\xdaxM\xd8\'\xe05q\x10W\x8d\xc6\xb6\x0e\xbd\xcc-6\xd5\xc7\x07E\xc2w\xab\x00\xc1!U;_\xca\x05wK\xbd\xb15\r-q\xb4:\xc9\x9a\xcb\x99]g\xef\x0c7j\xd92\x1d\xa0\x17\x11\xe4\xd2\xf1*\xde(G\x87\xc9\x1ay\x14\xe2]\x05\x15\x91%\x18\n|M\x89\x0fWy<p\x11\xa7\x84:\xdd\xc7\xa2+\x1c\xaf\xbdj\x0bR\xab\xc1\xabGP\xaf%AP\x91\x97\xe3\x07W\\\xf2\x00O\x12S\x19\xb5\xb6\xf8u\xfcH\xb7H\xf6\x07\x95s\xdfv\xb5\xa177j\t\x1eC\x0ez\xc5\x0c:\xd7\x8f\xa3\xde\xd1\xed\x90(\xdb\x81: \xb7W {\x7f\x10\xd7\xec\x83\xfd\xfcvl\r\xf9:\xc5\x0e\x05}'
-
-        if search_login == login and pwd == self.__decrypt(search_pwd):
+        if pwd == self.__decrypt(search_pwd):
             return True
         else:
             return False   
 
-    def signin_user(self, cpf: str, email: str, pwd: str) -> bool:
+    def signin_user(self, cpf: str, cnpj: str, email: str, nome_completo: str, pwd: str) -> Response:
+        encrypt_pwd: bytes = self.__encrypt(pwd)
 
-        encrypt_pwd: str = self.__encrypt(pwd)
+        if cnpj == "00000000000000" and cpf == "000000000": return False
 
-        print(encrypt_pwd)
+        cnpj_value: Union[str, None] = None if cnpj == "00000000000000" else cnpj
+        cpf_value: Union[str, None] = None if cpf == "00000000000000" else cpf
+
+        query: str = "CALL ProjetoHorizonte.CadastrarUsuario(%s, %s, %s, %s, %s);"
+        params: tuple = (cpf_value, cnpj_value, email, nome_completo, encrypt_pwd)
         
-        #return self.db_acess.sign_in_user(cpf, email, encrypt_pwd)
+        try:
+            self.__run_query(query, params=params, has_return=False)
+        except IntegrityError as ie:
+            return Response("Usuário já cadastrado", status=409)
 
-        return True
+        return Response("Autenticado", status=202)
 
-    def reset_password(self, cpf: str, login: str) -> str:
+    def reset_password(self, cpf: str, cnpj: str, login: str) -> str:
         
-        # get random password pf length 8 with letters, digits, and symbols
-        
-        password = ''.join(random.choice(self.all_characters) for i in range(8))        
-        email = create_email(login, 
+        if cnpj == "00000000000000" and cpf == "000000000": return False
+
+        cnpj_value: Union[str, None] = None if cnpj == "00000000000000" else cnpj
+        cpf_value: Union[str, None] = None if cpf == "00000000000000" else cpf
+
+        password = ''.join(random.choice(self.all_characters) for i in range(8)) 
+
+        query: str = "CALL ProjetoHorizonte.AlterarSenha(%s, %s, %s, %s);"
+        params: tuple = (cpf_value, cnpj_value, login, self.__encrypt(password))                               
+        self.__run_query(query, params, has_return=False)
+
+        email = create_email([login], 
                             "Reinicio de senha", 
                             "<strong>Olá,</strong> <br><br> Foi solicitada um reinicio de senha para o seu cadastro.<br> Estou lhe enviando uma senha temporária para uso. <br>SENHA: {}".format(password))
-        print(email)
-        #self.db_access.change_password(cpf, login, password)
-        #send_email()
+        send_email(email)
+
         return True
 
     def generate_token(self) -> Union[str, dict]:

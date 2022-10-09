@@ -6,3 +6,5 @@ jsonschema
 rsa
 requests
 pandas
+sqlalchemy
+pymysql

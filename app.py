@@ -23,22 +23,6 @@ api = Api(app)
 Session(app)
 #CORS(api)
 
-
-BD_PASSWORD: str = "B@tat@123"
-BD_HOST: str = "10.147.17.25"    
-BD_USER: str = "admin"
-
-BD_DATA = [BD_HOST, BD_USER, BD_PASSWORD]
-
-# Isso é horrível, mas nn tenho tempo pra consertar...
-SERVER: str = "10.147.17.25" #"192.168.66.102"#
-API_ENDPOINT_EXCEL: str = "http://"+SERVER+":2001/api/v1/GerarExcel/ExcelEmpresa"
-API_ENDPOINT_EMAIL: str = "http://"+SERVER+":2002/api/v1/GerarEmail/EmailBasico"
-API_ENDPOINT_PDF: str = "http://"+SERVER+":2003/api/v1/GerarPDF/FromJson"
-API_ENDPOINT_ZIP: str = "http://"+SERVER+":2000/api/v1/GerarZip/AES"
-
-
-
 class GerarFDP(Resource):
 
     @app.route("/api/v1/Auth/UserAuth", methods=["GET"])       
@@ -46,9 +30,9 @@ class GerarFDP(Resource):
         request_json = request.get_json()
 
         if not validate_json.validator(request_json, "login"):
-            return Response(dumps(validate_json.get_json_schema("login")), status=400)
+            return Response(dumps(validate_json.get_json_schema("login")), status=400, mimetype='application/json')
 
-        worker: auth.Authenticator = auth.Authenticator(BD_DATA)
+        worker: auth.Authenticator = auth.Authenticator()
 
         if not worker.validate_login(request_json["username"], request_json["password"]):
             return Response("Forbidden", status=403)
@@ -57,32 +41,29 @@ class GerarFDP(Resource):
                
         session[token] = data
 
-        return Response("Autenticado", status=200, headers={"token": token})
+        return Response("Autenticado", status=200, headers={"access_token": token})
 
     @app.route("/api/v1/Auth/UserSignin", methods=["POST"])       
     def UserSignin(*self):
         request_json = request.get_json()
 
         if not validate_json.validator(request_json, "signin"):
-            return Response(dumps(validate_json.get_json_schema("signin")), status=400)
+            return Response(dumps(validate_json.get_json_schema("signin")), status=400, mimetype='application/json')
 
-        worker: auth.Authenticator = auth.Authenticator(BD_DATA)
+        worker: auth.Authenticator = auth.Authenticator()
 
-        if not worker.signin_user(request_json["cpf"], request_json["email"], request_json["password"]):
-            return Response("Server Error", status=500)
-
-        return Response("Autenticado", status=202)
+        return worker.signin_user(request_json["cpf"], request_json["cnpj"], request_json["email"], request_json["nome_completo"], request_json["password"])                    
 
     @app.route("/api/v1/Auth/ResetPassword", methods=["GET"])       
     def ResetPassword(*self):
         request_json = request.get_json()
 
         if not validate_json.validator(request_json, "reset_pwd"):
-            return Response(dumps(validate_json.get_json_schema("reset_pwd")), status=400)
+            return Response(dumps(validate_json.get_json_schema("reset_pwd")), status=400, mimetype='application/json')
 
-        worker: auth.Authenticator = auth.Authenticator(BD_DATA)
+        worker: auth.Authenticator = auth.Authenticator()
 
-        if not worker.reset_password(request_json["cpf"], request_json["email"]):
+        if not worker.reset_password(request_json["cpf"], request_json["cnpj"], request_json["email"]):
             return Response("Server Error", status=500)
 
         return Response("Email Enviado", status=200)

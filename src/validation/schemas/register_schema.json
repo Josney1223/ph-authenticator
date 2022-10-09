@@ -1,9 +1,26 @@
 {
     "type" : "object",
-    "required": [ "cpf", "email", "password" ],
+    "required": [ "cpf", "cnpj", "nome_completo", "email", "password" ],
     "properties" : {
-        "cpf" : {"type" : "string"},
-        "email" : {"type" : "string"},
+        "cpf" : {
+            "type" : "string",
+            "minLenght": 11,
+            "maxLenght": 11
+        },
+        "cnpj": {
+            "type" : "string",
+            "minLenght": 14,
+            "maxLenght": 14
+        },
+        "nome_completo": {
+            "type" : "string",
+            "minLenght": 1,
+            "maxLenght": 90
+        }, 
+        "email" : {
+            "type" : "string",
+            "format": "idn-email"            
+        },
         "password" : {"type" : "string"}
     }
 }

@@ -1,7 +1,7 @@
 from requests import post
 from json import dumps
 
-API_ENDPOINT_EMAIL: str = ""
+API_ENDPOINT_EMAIL: str = "http://10.147.17.25:2002/api/v1/GerarEmail/EmailBasico"
 
 def create_email(to: list, title: str, body: str, copy: list[str] = [], ocult_copy: list[str] = []) -> dict:
     dict_email: dict = {}

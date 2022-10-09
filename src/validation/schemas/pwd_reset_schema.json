@@ -1,8 +1,20 @@
 {
     "type" : "object",
-    "required": [ "cpf", "email" ],
+    "required": [ "cpf",  "cnpj",  "email" ],
     "properties" : {
-        "cpf" : {"type" : "string"},
-        "email" : {"type" : "string"}
+        "cpf" : {
+            "type" : "string",
+            "minLenght": 11,
+            "maxLenght": 11
+        },
+        "cnpj": {
+            "type" : "string",
+            "minLenght": 14,
+            "maxLenght": 14
+        },         
+        "email" : {
+            "type" : "string",
+            "format": "idn-email"            
+        }
     }
 }
