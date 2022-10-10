@@ -17,11 +17,11 @@ class Authenticator:
     def __init__(self) -> None:
 
         path: str = os.getcwd()
-        print(path)
-        with open(os.path.join(path, "src/keys/privateKey.pem"), "rb") as p:
+
+        with open(os.path.join(path, "src","keys","privateKey.pem"), "rb") as p:
             self.private_key = PrivateKey.load_pkcs1(p.read())
 
-        with open(os.path.join(path, "src/keys/publicKey.pem"), "rb") as p:
+        with open(os.path.join(path, "src", "keys", "publicKey.pem"), "rb") as p:
             self.public_key = PublicKey.load_pkcs1(p.read())
 
         self.db_access: tuple[str] = ("10.147.17.25", "admin_projeto_horizonte", "PROJETO TI@TCC2022") 
