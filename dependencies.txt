@@ -8,4 +8,4 @@ requests
 pandas
 sqlalchemy
 pymysql
-wsgi
+uwsgi
