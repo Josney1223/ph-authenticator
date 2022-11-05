@@ -3,10 +3,10 @@ import os
 from json import dumps
 
 from flask import Flask, request, Response, session
-from flask_cors import cross_origin, CORS
 from flask_restful import Resource, Api
 from flask_session import Session
 
+from src.lib.cors import build_cors_preflight_response
 from src.validation import validate_json
 from src.lib import auth
 
@@ -26,24 +26,26 @@ class PHAuth(Resource):
 
     @app.route("/api/v1/Auth/UserAuth", methods=["POST"])       
     def UserAuth(*self):
+        if request.method == "OPTIONS": return build_cors_preflight_response()
         request_json = request.get_json()
 
         if not validate_json.validator(request_json, "login"):
-            return Response(dumps(validate_json.get_json_schema("login")), status=400, mimetype='application/json')
+            return Response(dumps(validate_json.get_json_schema("login")), status=400, mimetype='application/json').headers.add("Access-Control-Allow-Origin", "*")
 
         worker: auth.Authenticator = auth.Authenticator()
 
         if not worker.validate_login(request_json["username"], request_json["password"]):
-            return Response("Forbidden", status=403)
+            return Response("Forbidden", status=403).headers.add("Access-Control-Allow-Origin", "*")
 
         token, data = worker.generate_token() 
                
         session[token] = data
 
-        return Response("Autenticado", status=200, headers={"access_token": token})
+        return Response("Autenticado", status=200, headers={"access_token": token}).headers.add("Access-Control-Allow-Origin", "*")
 
     @app.route("/api/v1/Auth/UserSignin", methods=["POST"])       
     def UserSignin(*self):
+        if request.method == "OPTIONS": return build_cors_preflight_response()
         request_json = request.get_json()
 
         if not validate_json.validator(request_json, "signin"):
@@ -51,32 +53,39 @@ class PHAuth(Resource):
 
         worker: auth.Authenticator = auth.Authenticator()
 
-        return worker.signin_user(request_json["cpf"], request_json["cnpj"], request_json["email"], request_json["nome_completo"], request_json["password"])                    
+        return worker.signin_user(request_json["cpf"], 
+                                request_json["cnpj"],
+                                request_json["email"],
+                                request_json["nome_completo"],
+                                request_json["password"]).headers.add("Access-Control-Allow-Origin", "*")
+
 
     @app.route("/api/v1/Auth/ResetPassword", methods=["POST"])       
     def ResetPassword(*self):
+        if request.method == "OPTIONS": return build_cors_preflight_response()
         request_json = request.get_json()
 
         if not validate_json.validator(request_json, "reset_pwd"):
-            return Response(dumps(validate_json.get_json_schema("reset_pwd")), status=400, mimetype='application/json')
+            return Response(dumps(validate_json.get_json_schema("reset_pwd")), status=400, mimetype='application/json').headers.add("Access-Control-Allow-Origin", "*")
 
         worker: auth.Authenticator = auth.Authenticator()
 
         if not worker.reset_password(request_json["cpf"], request_json["cnpj"], request_json["email"]):
-            return Response("Server Error", status=500)
+            return Response("Server Error", status=500).headers.add("Access-Control-Allow-Origin", "*")
 
-        return Response("Email Enviado", status=200)
+        return Response("Email Enviado", status=200).headers.add("Access-Control-Allow-Origin", "*")
 
     @app.route("/api/v1/Auth/ValidateToken", methods=["GET"])       
     def ValidateToken(*self):
+        if request.method == "OPTIONS": return build_cors_preflight_response()
         args = request.headers
 
         if not args["Authorization"]:
-            return Response("token não enviado", status=400)
+            return Response("token não enviado", status=400).headers.add("Access-Control-Allow-Origin", "*")
         elif not session.get(args["Authorization"]):
-            return Response("Usuário não logado", status=401)                
+            return Response("Usuário não logado", status=401).headers.add("Access-Control-Allow-Origin", "*")                
 
-        return Response("Autorizado", status=200)
+        return Response("Autorizado", status=200).headers.add("Access-Control-Allow-Origin", "*")
     
 
 if __name__ == '__main__':    
