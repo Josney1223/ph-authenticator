@@ -21,11 +21,10 @@ app.config["SESSION_TYPE"] = 'filesystem'
 
 api = Api(app)
 Session(app)
-#CORS(api)
 
-class GerarFDP(Resource):
+class PHAuth(Resource):
 
-    @app.route("/api/v1/Auth/UserAuth", methods=["GET"])       
+    @app.route("/api/v1/Auth/UserAuth", methods=["POST"])       
     def UserAuth(*self):
         request_json = request.get_json()
 
@@ -54,7 +53,7 @@ class GerarFDP(Resource):
 
         return worker.signin_user(request_json["cpf"], request_json["cnpj"], request_json["email"], request_json["nome_completo"], request_json["password"])                    
 
-    @app.route("/api/v1/Auth/ResetPassword", methods=["GET"])       
+    @app.route("/api/v1/Auth/ResetPassword", methods=["POST"])       
     def ResetPassword(*self):
         request_json = request.get_json()
 
