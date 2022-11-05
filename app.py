@@ -30,18 +30,18 @@ class PHAuth(Resource):
         request_json = request.get_json()
 
         if not validate_json.validator(request_json, "login"):
-            return build_cors_response(Response(dumps(validate_json.get_json_schema("login")), status=400, mimetype='application/json'))
+            return Response(dumps(validate_json.get_json_schema("login")), status=400, mimetype='application/json')
 
         worker: auth.Authenticator = auth.Authenticator()
 
         if not worker.validate_login(request_json["username"], request_json["password"]):
-            return build_cors_response(Response("Forbidden", status=403))
+            return Response("Forbidden", status=403)
 
         token, data = worker.generate_token() 
                
         session[token] = data
 
-        return build_cors_response(Response("Autenticado", status=200, headers={"access_token": token}))
+        return Response("Autenticado", status=200, headers={"access_token": token})
 
     @app.route("/api/v1/Auth/UserSignin", methods=["POST"])       
     def UserSignin(*self):
@@ -49,15 +49,15 @@ class PHAuth(Resource):
         request_json = request.get_json()
 
         if not validate_json.validator(request_json, "signin"):
-            return build_cors_response(Response(dumps(validate_json.get_json_schema("signin")), status=400, mimetype='application/json'))
+            return Response(dumps(validate_json.get_json_schema("signin")), status=400, mimetype='application/json')
 
         worker: auth.Authenticator = auth.Authenticator()
 
-        return build_cors_response(worker.signin_user(request_json["cpf"], 
+        return worker.signin_user(request_json["cpf"], 
                                 request_json["cnpj"],
                                 request_json["email"],
                                 request_json["nome_completo"],
-                                request_json["password"]))
+                                request_json["password"])
 
 
     @app.route("/api/v1/Auth/ResetPassword", methods=["POST"])       
@@ -66,14 +66,14 @@ class PHAuth(Resource):
         request_json = request.get_json()
 
         if not validate_json.validator(request_json, "reset_pwd"):
-            return build_cors_response(Response(dumps(validate_json.get_json_schema("reset_pwd")), status=400, mimetype='application/json'))
+            return Response(dumps(validate_json.get_json_schema("reset_pwd")), status=400, mimetype='application/json')
 
         worker: auth.Authenticator = auth.Authenticator()
 
         if not worker.reset_password(request_json["cpf"], request_json["cnpj"], request_json["email"]):
-            return build_cors_response(Response("Server Error", status=500))
+            return Response("Server Error", status=500)
 
-        return build_cors_response(Response("Email Enviado", status=200))
+        return Response("Email Enviado", status=200)
 
     @app.route("/api/v1/Auth/ValidateToken", methods=["GET"])       
     def ValidateToken(*self):
@@ -81,12 +81,15 @@ class PHAuth(Resource):
         args = request.headers
 
         if not args["Authorization"]:
-            return build_cors_response(Response("token não enviado", status=400))
+            return Response("token não enviado", status=400)
         elif not session.get(args["Authorization"]):
-            return build_cors_response(Response("Usuário não logado", status=401))
+            return Response("Usuário não logado", status=401)
 
-        return build_cors_response(Response("Autorizado", status=200))
+        return Response("Autorizado", status=200)
     
+    @app.after_request
+    def AfterRequest(response: Response):
+        return build_cors_response(response)
 
 if __name__ == '__main__':    
     app.run(host='0.0.0.0', port=2000)
