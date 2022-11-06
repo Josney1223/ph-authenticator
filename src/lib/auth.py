@@ -59,8 +59,8 @@ class Authenticator:
     def validate_login(self, login: str, pwd: str) -> bool:
         query: str = "CALL ProjetoHorizonte.BuscaSenha('{}');".format(login)                        
         search_pwd = self.__run_query(query).values.tolist()[0][0]
-
-        if self.__encrypt(pwd) == search_pwd:
+        
+        if pwd == self.__decrypt(search_pwd):
             return True
         else:
             return False  
