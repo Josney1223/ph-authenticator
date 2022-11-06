@@ -1,6 +1,6 @@
 {
     "type" : "object",
-    "required": [ "cpf", "cnpj", "nome_completo", "email", "password" ],
+    "required": [ "cpf", "cnpj", "nome_usuario", "email", "password" ],
     "properties" : {
         "cpf" : {
             "type" : "string",
