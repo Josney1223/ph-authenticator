@@ -60,7 +60,7 @@ class Authenticator:
         query: str = "CALL ProjetoHorizonte.BuscaSenha('{}');".format(login)                        
         search_pwd = self.__run_query(query).values.tolist()[0][0]
 
-        if pwd == search_pwd:
+        if self.__encrypt(pwd) == search_pwd:
             return True
         else:
             return False  
