@@ -34,11 +34,11 @@ class PHAuth(Resource):
 
         worker: auth.Authenticator = auth.Authenticator()
 
-        if not worker.validate_login(request_json["username"], request_json["password"]):
+        if not worker.validate_login(request_json["email"], request_json["password"]):
             return Response("Forbidden", status=403)
 
         token, data = worker.generate_token() 
-        level = worker.get_access_level(request_json["username"])
+        level = worker.get_access_level(request_json["email"])
                
         session[token] = data
 
@@ -57,7 +57,7 @@ class PHAuth(Resource):
         return worker.signin_user(request_json["cpf"], 
                                 request_json["cnpj"],
                                 request_json["email"],
-                                request_json["nome_completo"],
+                                request_json["nome_usuario"],
                                 request_json["password"])
 
 

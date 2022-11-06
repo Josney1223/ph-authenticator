@@ -12,7 +12,7 @@
             "minLenght": 14,
             "maxLenght": 14
         },
-        "nome_completo": {
+        "nome_usuario": {
             "type" : "string",
             "minLenght": 1,
             "maxLenght": 90
