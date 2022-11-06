@@ -41,7 +41,7 @@ class PHAuth(Resource):
                
         session[token] = data
 
-        return Response("Autenticado", status=200, headers={"access_token": token})
+        return Response(dumps({"access_token" : token}), status=200)
 
     @app.route("/api/v1/Auth/UserSignin", methods=["POST"])       
     def UserSignin(*self):
