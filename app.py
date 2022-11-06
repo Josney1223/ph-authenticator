@@ -38,10 +38,11 @@ class PHAuth(Resource):
             return Response("Forbidden", status=403)
 
         token, data = worker.generate_token() 
+        level = worker.get_access_level(request_json["username"])
                
         session[token] = data
 
-        return Response(dumps({"access_token" : token}), status=200)
+        return Response(dumps({"access_token" : token, "access_level": level}), status=200)
 
     @app.route("/api/v1/Auth/UserSignin", methods=["POST"])       
     def UserSignin(*self):

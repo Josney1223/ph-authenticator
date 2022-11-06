@@ -60,10 +60,14 @@ class Authenticator:
         query: str = "CALL ProjetoHorizonte.BuscaSenha('{}');".format(login)                        
         search_pwd = self.__run_query(query).values.tolist()[0][0]
 
-        if pwd == self.__decrypt(search_pwd):
+        if pwd == search_pwd:
             return True
         else:
-            return False   
+            return False  
+
+    def get_access_level(self, login: str) -> int:
+        query: str = "CALL ProjetoHorizonte.BuscaNivelAcesso('{}');".format(login)                        
+        return int(self.__run_query(query).values.tolist()[0][0])
 
     def signin_user(self, cpf: str, cnpj: str, email: str, nome_completo: str, pwd: str) -> Response:
         encrypt_pwd: bytes = self.__encrypt(pwd)
