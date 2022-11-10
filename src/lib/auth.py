@@ -111,7 +111,7 @@ class Authenticator:
         return Response("E-mail enviado", status=200)
 
     def generate_token(self) -> Union[str, dict]:
-        bearer: str = 'Bearer ' + ''.join(random.choice(self.characters) for i in range(1024))
+        bearer: str = 'Bearer ' + ''.join(random.choice(self.all_characters) for i in range(1024))
         data = {
             "login_time": datetime.strftime(datetime.now(), "%d/%m/%Y %H:%M:%S"),
             "access_level": self.access_level
