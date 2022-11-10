@@ -5,7 +5,7 @@ import mysql.connector
 import os
 
 from flask import Response
-from mysql.connector.errors import IntegrityError
+from mysql.connector.errors import IntegrityError, DatabaseError
 from sqlalchemy import create_engine, engine
 from typing import Union
 from rsa import encrypt, decrypt, PrivateKey, PublicKey
@@ -26,15 +26,15 @@ class Authenticator:
 
         self.db_access: tuple[str] = ("10.147.17.25", "admin_projeto_horizonte", "PROJETO TI@TCC2022") 
         self.db_engine: engine.Engine = create_engine('mysql+pymysql://admin_projeto_horizonte:PROJETO%20TI%40TCC2022@10.147.17.25:3306/ProjetoHorizonte')
-        self.all_characters: str = string.ascii_letters + string.digits + string.punctuation
-        self.characters: str = string.ascii_letters + string.digits         
+        self.all_characters: str = string.ascii_letters + string.digits              
         self.access_level: int = 0
 
     def __run_query(self, query: str, params: tuple = (), has_return: bool = True) -> Union[pd.DataFrame, None]:
         
         if has_return:
-            try:            
-                return pd.read_sql(query, con=self.db_engine)
+            try:   
+                df = pd.read_sql(query, con=self.db_engine)         
+                return df
             except Exception as e:
                 raise Exception("Falha ao se conectar com o banco de dados." + str(e.args))        
         else:
@@ -57,7 +57,7 @@ class Authenticator:
             return ""
 
     def validate_login(self, login: str, pwd: str) -> bool:
-        query: str = "CALL ProjetoHorizonte.BuscaSenha('{}');".format(login)                        
+        query: str = "CALL ProjetoHorizonte.BuscaSenha('{}');".format(login)                                
         search_pwd = self.__run_query(query).values.tolist()[0][0]
         
         if pwd == self.__decrypt(search_pwd):
@@ -87,7 +87,7 @@ class Authenticator:
 
         return Response("Autenticado", status=202)
 
-    def reset_password(self, cpf: str, cnpj: str, login: str) -> str:
+    def reset_password(self, cpf: str, cnpj: str, login: str) -> Response:
         
         if cnpj == "00000000000000" and cpf == "000000000": return False
 
@@ -95,17 +95,20 @@ class Authenticator:
         cpf_value: Union[str, None] = None if cpf == "00000000000000" else cpf
 
         password = ''.join(random.choice(self.all_characters) for i in range(8)) 
-
         query: str = "CALL ProjetoHorizonte.AlterarSenha(%s, %s, %s, %s);"
-        params: tuple = (cpf_value, cnpj_value, login, self.__encrypt(password))                               
-        self.__run_query(query, params, has_return=False)
+        params: tuple = (cpf_value, cnpj_value, login, self.__encrypt(password))
+
+        try:
+            self.__run_query(query, params=params, has_return=False)
+        except DatabaseError as ie:
+            return Response("Usuário não cadastrado.", status=404)
 
         email = create_email([login], 
                             "Reinicio de senha", 
                             "<strong>Olá,</strong> <br><br> Foi solicitada um reinicio de senha para o seu cadastro.<br> Estou lhe enviando uma senha temporária para uso. <br>SENHA: {}".format(password))
         send_email(email)
 
-        return True
+        return Response("E-mail enviado", status=200)
 
     def generate_token(self) -> Union[str, dict]:
         bearer: str = 'Bearer ' + ''.join(random.choice(self.characters) for i in range(1024))

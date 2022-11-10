@@ -71,10 +71,8 @@ class PHAuth(Resource):
 
         worker: auth.Authenticator = auth.Authenticator()
 
-        if not worker.reset_password(request_json["cpf"], request_json["cnpj"], request_json["email"]):
-            return Response("Server Error", status=500)
+        return worker.reset_password(request_json["cpf"], request_json["cnpj"], request_json["email"])                    
 
-        return Response("Email Enviado", status=200)
 
     @app.route("/api/v1/Auth/ValidateToken", methods=["GET"])       
     def ValidateToken(*self):
