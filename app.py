@@ -2,7 +2,7 @@ import os
 
 from json import dumps
 
-from flask import Flask, request, Response, session
+from flask import Flask, request, Response
 from flask_restful import Resource, Api
 from flask_session import Session
 
@@ -32,17 +32,9 @@ class PHAuth(Resource):
         if not validate_json.validator(request_json, "login"):
             return Response(dumps(validate_json.get_json_schema("login")), status=400, mimetype='application/json')
 
-        worker: auth.Authenticator = auth.Authenticator()
+        worker: auth.Authenticator = auth.Authenticator()        
 
-        if not worker.validate_login(request_json["email"], request_json["password"]):
-            return Response("Forbidden", status=403)
-
-        token, data = worker.generate_token() 
-        level = worker.get_access_level(request_json["email"])
-               
-        session[token] = data
-
-        return Response(dumps({"access_token" : token, "access_level": level}), status=200)
+        return worker.login_complete(request_json['email'], request_json['password'])
 
     @app.route("/api/v1/Auth/UserSignin", methods=["POST"])       
     def UserSignin(*self):
@@ -60,7 +52,6 @@ class PHAuth(Resource):
                                 request_json["nome_usuario"],
                                 request_json["password"])
 
-
     @app.route("/api/v1/Auth/ResetPassword", methods=["POST"])       
     def ResetPassword(*self):
         if request.method == "OPTIONS": return build_cors_preflight_response()
@@ -73,22 +64,21 @@ class PHAuth(Resource):
 
         return worker.reset_password(request_json["cpf"], request_json["cnpj"], request_json["email"])                    
 
-
     @app.route("/api/v1/Auth/ValidateToken", methods=["GET"])       
-    def ValidateToken(*self):
-        if request.method == "OPTIONS": return build_cors_preflight_response()
-        args = request.headers
+    def ValidateToken(*self):        
+        header = request.headers        
+        
+        if "Access-Token" not in header.keys(): 
+            return Response("Token não enviado", status=400)
 
-        if not args["Authorization"]:
-            return Response("token não enviado", status=400)
-        elif not session.get(args["Authorization"]):
-            return Response("Usuário não logado", status=401)
-
-        return Response("Autorizado", status=200)
+        worker: auth.Authenticator = auth.Authenticator()
+        
+        return worker.validate_token(header["Access-Token"])
     
     @app.after_request
     def AfterRequest(response: Response):
         return build_cors_response(response)
+
 
 if __name__ == '__main__':    
     app.run(host='0.0.0.0', port=2000)
