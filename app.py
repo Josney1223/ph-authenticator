@@ -14,11 +14,6 @@ UPLOAD_FOLDER = os.getcwd()
 
 app = Flask(__name__)
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.secret_key = b'CDgWUjqcCaNURJD9AkcRgKaTucApXBGH'
-app.config["SESSION_PERMANENT"] = False
-app.config["SESSION_TYPE"] = 'filesystem'
-
 api = Api(app)
 Session(app)
 
